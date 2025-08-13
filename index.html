@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AGRIST 温室GHG 試算（地域の平均的な目安つき：鹿児島・促成ピーマン）</title>
+    <style>
+        /* ===== AGRIST brand (logo guideline) =====
+     Primary green: #007C3E / Neutral text: #222222
+     Tints: #B2D7C5, #99CAB1, #329664, #198951
+     Japanese font: ロダンPro系 → 近似フォールバックを使用
+  */
+        :root {
+            --green: #007C3E;
+            --green-80: #198951;
+            --green-60: #329664;
+            --green-20: #B2D7C5;
+            --text: #222222;
+            --muted: #475569;
+            --bg: #F7F8F9;
+            --panel: #ffffff;
+            --warn: #B91C1C;
+            --line: #E6EAEE;
+            --chip: #E9F5EE;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "TT Norms Pro", "Noto Sans JP", "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", system-ui, sans-serif;
+        }
+
+        .wrap {
+            max-width: 1080px;
+            margin: 20px auto;
+            padding: 0 16px
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0 16px
+        }
+
+        .mark {
+            width: 28px;
+            height: 28px;
+            background: conic-gradient(from 0deg at 50% 50%, var(--green) 0 60%, var(--green-80) 60% 100%);
+            border-radius: 7px
+        }
+
+        h1 {
+            font-size: 26px;
+            margin: 0
+        }
+
+        .sub {
+            color: #334155
+        }
+
+        .card {
+            background: var(--panel);
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .04);
+            padding: 16px;
+            margin: 14px 0
+        }
+
+        h2 {
+            font-size: 20px;
+            margin: 0 0 12px
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .note {
+            color: #5b6775;
+            font-size: 14px
+        }
+
+        .hint {
+            font-size: 13px;
+            color: #334155;
+            margin-top: 6px
+        }
+
+        .areaInput {
+            font-size: 18px;
+            padding: 8px 10px;
+            border: 2px solid var(--green-20);
+            border-radius: 10px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            vertical-align: top
+        }
+
+        thead th {
+            background: #EEF6F0;
+            color: #0f1b12;
+            text-align: left;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px
+        }
+
+        tbody td {
+            background: #fff;
+            border: 1px solid #eef2f6
+        }
+
+        .inputCell input {
+            width: 220px;
+            font-size: 18px;
+            padding: 8px;
+            border: 2px solid var(--green-20);
+            border-radius: 10px;
+            background: #FFFAE3
+        }
+
+        .bench {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--chip);
+            border: 1px solid #D8EDE1;
+            color: #0f3b23
+        }
+
+        .bench b {
+            color: var(--green-60)
+        }
+
+        .deltaPos {
+            color: var(--green-80);
+            font-weight: 700
+        }
+
+        .deltaNeg {
+            color: var(--warn);
+            font-weight: 700
+        }
+
+        .kpi {
+            min-width: 220px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px 14px
+        }
+
+        .kpi .v {
+            font-size: 24px;
+            font-weight: 800
+        }
+
+        .kpi .c {
+            font-size: 13px;
+            color: #475569
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 12px;
+            color: #0f3b23;
+            background: var(--green-20);
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid #D8EDE1
+        }
+
+        a {
+            color: var(--green-60);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--green-60)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <div class="mark"></div>
+            <div>
+                <h1>AGRIST 温室GHG 試算</h1>
+                <div class="sub">地域の平均的な目安（鹿児島・促成ピーマン）と比較して、あなたの数値がどれだけ<strong>削減</strong>できているかを表示します。</div>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>① 面積</h2>
+            <div class="row">
+                <label><b>面積</b>（a＝100㎡、10a=0.1ha）：
+                    <input id="areaA" class="areaInput" type="number" min="1" step="1" value="10">
+                </label>
+                <span class="tag">作型：鹿児島・促成（加温あり）</span>
+                <span class="tag">比較：地域の平均的な目安</span>
+            </div>
+            <div class="note" style="margin-top:8px">※ 右の目安値は面積で自動換算されます。請求書や伝票の<strong>年間合計</strong>を黄色の欄に入力してください。
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>② 年間の活動量（あなたの入力 &amp; 地域の平均的な目安）</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目 <span class="note">（かんたんな説明）</span></th>
+                        <th>あなたの入力</th>
+                        <th>地域の平均的な目安</th>
+                        <th>差（あなた − 目安）</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_inputs"></tbody>
+            </table>
+            <div class="hint">🛈 入力は「年間合計」です（電力kWh・燃料/肥料のLやkg・年間出荷量）。</div>
+        </div>
+
+        <div class="card">
+            <h2>③ 結果（あなた vs 地域の平均的な目安）</h2>
+            <div class="row" style="gap:14px">
+                <div class="kpi">
+                    <div class="v" id="kpi_total">0</div>
+                    <div class="c">合計（kgCO₂e/年）</div>
+                </div>
+                <div class="kpi">
+                    <div class="v" id="kpi_intensity">—</div>
+                    <div class="c">1kgあたり（kgCO₂e/kg）※出荷量入力時</div>
+                </div>
+                <div class="kpi">
+                    <div class="v" id="kpi_delta">—</div>
+                    <div class="c">地域目安比（%）<span class="note">マイナス＝削減</span></div>
+                </div>
+                <div class="kpi">
+                    <div class="v" id="kpi_abs_reduction">—</div>
+                    <div class="c">削減量（kgCO₂e/年）</div>
+                </div>
+            </div>
+            <table style="margin-top:10px">
+                <thead>
+                    <tr>
+                        <th>内訳</th>
+                        <th>あなた（kgCO₂e/年）</th>
+                        <th>地域の平均的な目安</th>
+                        <th>差（あなた − 目安）</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_break"></tbody>
+            </table>
+            <div class="note" style="margin-top:8px">内訳：電力、A重油、LPG、軽油、尿素、石灰、N₂O（土壌：直接+間接）。</div>
+        </div>
+
+        <div class="card">
+            <h2>④ このツールの計算根拠（国際標準と日本の公表値に準拠）</h2>
+            <ul class="note" style="line-height:1.9">
+                <li>
+                    <b>準拠する基準・考え方</b><br>
+                    ・製品カーボンフットプリントの枠組み：
+                    <a href="https://ghgprotocol.org/product-standard" target="_blank" rel="noopener">GHG Protocol
+                        Product Standard</a> ／
+                    <a href="https://www.iso.org/standard/71206.html" target="_blank" rel="noopener">ISO
+                        14067:2018</a><br>
+                    ・農業の排出原単位と方程式：
+                    <a href="https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_11_Ch11_N2O%26CO2.pdf"
+                        target="_blank" rel="noopener">IPCC 2006 GL Vol.4 Ch.11</a> ＋
+                    <a href="https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch11_Soils_N2O_CO2.pdf"
+                        target="_blank" rel="noopener">2019 Refinement</a><br>
+                    ・地球温暖化係数（GWP100）：<a
+                        href="https://ghgprotocol.org/sites/default/files/2024-08/Global-Warming-Potential-Values%20%28August%202024%29.pdf"
+                        target="_blank" rel="noopener">IPCC AR6（N₂O=273）</a>
+                </li>
+
+                <li>
+                    <b>電力（スコープ2）</b>：<code>排出量 = 年間使用量(kWh) × 排出係数(kg-CO₂/kWh)</code><br>
+                    ・地域の係数例（九州電力 2023年度 実績）：
+                    <a href="https://www.kyuden.co.jp/sustainability/environment/notice02.html" target="_blank"
+                        rel="noopener">0.417 kg-CO₂/kWh（メニューB）</a><br>
+                    ・電気事業者別の最新係数一覧：
+                    <a href="https://policies.env.go.jp/earth/ghg-santeikohyo/calc.html" target="_blank"
+                        rel="noopener">環境省「算定・報告・公表制度」係数一覧</a>
+                </li>
+
+                <li>
+                    <b>燃料（スコープ1：A重油・LPG・軽油など）</b>：<code>排出量 = 年間使用量 × 燃料別係数</code><br>
+                    ・参考係数（例）：A重油 2.75 kg-CO₂/L、LPG 2.99 kg-CO₂/kg、軽油 2.62 kg-CO₂/L（環境省公表）<br>
+                    参照：<a href="https://www.env.go.jp/content/000274769.pdf" target="_blank" rel="noopener">環境省
+                        資料（2024/12）</a>
+                </li>
+
+                <li>
+                    <b>石灰（炭カル）・尿素のCO₂</b>（IPCC 2006 GL Ch.11）<br>
+                    ・石灰（炭酸カルシウム）：<code>CO₂ = 石灰量(kg) × 0.44</code><br>
+                    ・尿素：<code>CO₂ = 尿素量(kg) × 0.733</code>（尿素中C=0.20 を CO₂換算 0.20×44/12）<br>
+                    出典：<a href="https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_11_Ch11_N2O%26CO2.pdf"
+                        target="_blank" rel="noopener">IPCC 2006 GL Ch.11</a>
+                </li>
+
+                <li>
+                    <b>土壌由来 N₂O（化学肥料Nを起点、Tier1）</b><br>
+                    ・直接：<code>N₂O-N = N投入量 × EF1(=1%)</code><br>
+                    ・間接（揮散）：<code>N揮散 = N投入×FRAC<sub>vol</sub>(0.10)</code>、<code>N₂O-N= N揮散×EF<sub>vol</sub>(1%)</code><br>
+                    ・間接（溶脱）：<code>N溶脱 = N投入×FRAC<sub>leach</sub>(0.30)</code>、<code>N₂O-N= N溶脱×EF<sub>leach</sub>(0.0075)</code><br>
+                    ・N₂O（質量）＝ <code>(N₂O-N合計) × (44/28)</code>、CO₂e 変換＝ <code>N₂O × GWP<sub>100</sub>(=273)</code><br>
+                    出典：<a href="https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_11_Ch11_N2O%26CO2.pdf"
+                        target="_blank" rel="noopener">IPCC 2006 GL Ch.11</a> ／
+                    <a href="https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch11_Soils_N2O_CO2.pdf"
+                        target="_blank" rel="noopener">2019 Refinement</a>
+                </li>
+
+                <li>
+                    <b>「地域の平均的な目安」ソース（鹿児島・促成ベースの例）</b><br>
+                    ・燃油 13kL/10a、収量 13〜14t/10a（園芸事例）：
+                    <a href="https://www.pref.kagoshima.jp/ag06/hanakaju/documents/106327_20230512131617-1.pdf"
+                        target="_blank" rel="noopener">鹿児島県「農作物生産コスト低減対策」</a><br>
+                    ・窒素 50kg-N/10a（かん水施肥なら 42kg-N/10a）：
+                    <a href="https://www.pref.kagoshima.jp/ag05/documents/81177_20200508091432-1.pdf" target="_blank"
+                        rel="noopener">鹿児島県 施肥基準（ピーマン）</a> ／
+                    <a href="https://www.maff.go.jp/j/seisan/kankyo/hozen_type/h_sehi_kizyun/" target="_blank"
+                        rel="noopener">MAFF 都道府県施肥基準</a><br>
+                    ・（電力の目安事例）加温期 756.7 kWh/10a：
+                    <a href="https://www.city.miyazaki.miyazaki.jp/fs/8/4/3/1/4/2/_/843142.pdf" target="_blank"
+                        rel="noopener">宮崎市「省エネ型施設園芸設備 実証（令和6）」</a><br>
+                    ・CO₂施用（LPガス燃焼）に関する技術資料：
+                    <a href="https://jgha.com/wp-content/uploads/2020/03/TM04-2-text4_7.pdf" target="_blank"
+                        rel="noopener">日本施設園芸協会 共通テキスト</a> ／
+                    <a href="https://www.pref.ibaraki.jp/nourinsuisan/enken/seika/yasai/tomato/documents/s2223.pdf"
+                        target="_blank" rel="noopener">茨城県（トマト事例）</a> ／
+                    <a href="https://www.pref.okayama.jp/uploaded/life/444292_2985492_misc.pdf" target="_blank"
+                        rel="noopener">岡山県（ナス事例）</a>
+                </li>
+
+                <li>
+                    <b>日本制度の整合</b>：電気・燃料の係数は
+                    <a href="https://policies.env.go.jp/earth/ghg-santeikohyo/calc.html" target="_blank"
+                        rel="noopener">環境省「算定・報告・公表制度」</a> の公表値と整合を取っています。
+                    施設園芸の省エネ技術は
+                    <a href="https://www.maff.go.jp/j/seisan/kankyo/ondanka/attach/pdf/index-112.pdf" target="_blank"
+                        rel="noopener">「施設園芸省エネルギー生産管理マニュアル（改定2版）」</a>
+                    を参照。
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // ===== 地域の平均的な目安（10aあたり、鹿児島・促成ベース） =====
+        // 出典：燃油13kL/10a・収量13〜14t（鹿児島県）、加温期電力756.7 kWh/10a（宮崎市）、N=50kg/10a（鹿児島県）
+        // LPGはLPガス燃焼量0.3〜0.7 kg/10a/h・CO2施用3 kg-CO2/10a/h(≒LPG1 kg/h)から300〜400h/年を想定して中間値を採用
+        // 軽油は構内運搬等の周辺用途として仮置き（現地で上書き前提）
+        const REGION_PER10A = {
+            kwh: 757,     // 宮崎市 加温期実測 ≒756.7 kWh/10a（参考）
+            oil: 13000,   // A重油 13kL/10a（鹿児島県資料）
+            lpg: 250,     // CO2施用あり想定の代表値（デモ用・上書き可）
+            diesel: 20,      // 仮置き（現地実測で要上書き）
+            n: 50,      // 施肥基準（N）
+            urea: 13,      // 「尿素をN成分で6kg/10a」→製品量に換算（6/0.46）
+            lime: 150,     // pH矯正の一般的レンジ100〜200から中間値
+            yield: 13500    // 13〜14t/10aの中点
+        };
+
+        // ===== 排出係数（固定） =====
+        const EF = {
+            grid: 0.417,   // kg-CO2/kWh（例：九州）
+            oil: 2.75,    // kg-CO2/L
+            lpg: 2.99,    // kg-CO2/kg
+            diesel: 2.62,  // kg-CO2/L
+            urea: 0.20,    // kg-CO2/kg（尿素の加水分解）
+            lime: 0.44,    // kg-CO2/kg（CaCO3）
+            // IPCC 2006/2019 Tier1
+            ef1: 0.01,       // 直接 N2O-N
+            frac_vol: 0.10,  // 揮散率
+            ef_vol: 0.01,    // 揮散分 N2O-N
+            frac_leach: 0.30,// 溶脱率
+            ef_leach: 0.0075,// 溶脱分 N2O-N
+            gwp_n2o: 273     // AR6
+        };
+        const M = 44 / 28;   // N2O / N2O-N
+        const $ = id => document.getElementById(id);
+        const fmt = x => new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 2 }).format(x);
+
+        // 入力項目（説明は年配の方にも伝わる語に）
+        const ITEMS = [
+            { key: 'kwh', label: '電力（kWh/年）', help: '1年間の電気使用量（請求書の合計kWh）' },
+            { key: 'oil', label: '暖房用 燃油（A重油, L/年）', help: '温風機・ボイラーで使うA重油の年間合計L' },
+            { key: 'lpg', label: 'プロパンガス（LPG, kg/年）', help: 'CO₂施用などで使うLPGの年間合計kg（未使用なら0でOK）' },
+            { key: 'diesel', label: '軽油（L/年）', help: '構内の運搬・機械で使う燃料（ざっくりでOK）' },
+            { key: 'n', label: '化学肥料の窒素（kg-N/年）', help: '肥料の成分表から窒素（N）量だけを合計' },
+            { key: 'urea', label: '尿素（kg/年）', help: '尿素そのものの使用量（使っていなければ0）' },
+            { key: 'lime', label: '石灰（炭酸カルシウム, kg/年）', help: 'pH調整のための石灰（使っていなければ0）' },
+            { key: 'yield', label: '出荷量（kg/年）', help: '1年間の出荷合計（kg）' }
+        ];
+
+        // テーブル生成
+        function buildInputTable() {
+            const tb = $('tbody_inputs'); tb.innerHTML = '';
+            ITEMS.forEach(it => {
+                const tr = document.createElement('tr');
+
+                const td0 = document.createElement('td');
+                td0.innerHTML = `<b>${it.label}</b><div class="note">${it.help}</div>`;
+
+                const td1 = document.createElement('td'); td1.className = 'inputCell';
+                td1.innerHTML = `<input id="${it.key}" type="number" min="0" step="0.01" value="0">`;
+
+                const td2 = document.createElement('td');
+                td2.innerHTML = `<span class="bench">地域の目安：<b id="bench_${it.key}">0</b></span>`;
+
+                const td3 = document.createElement('td'); td3.id = `diff_${it.key}`;
+                tr.appendChild(td0); tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+                tb.appendChild(tr);
+            });
+
+            document.querySelectorAll('.inputCell input').forEach(el => {
+                el.addEventListener('input', recalc);
+                el.addEventListener('change', recalc);
+            });
+        }
+
+        function regionForArea(A) {
+            const r = {};
+            for (const k in REGION_PER10A) { r[k] = REGION_PER10A[k] * (A / 10); }
+            return r;
+        }
+
+        function readUser() {
+            const get = id => parseFloat($(id).value || 0);
+            return {
+                areaA: parseFloat($('areaA').value || 10),
+                kwh: get('kwh'), oil: get('oil'), lpg: get('lpg'), diesel: get('diesel'),
+                n: get('n'), urea: get('urea'), lime: get('lime'), yield: get('yield')
+            }
+        }
+
+        function totals(inp) {
+            const e_elec = inp.kwh * EF.grid;
+            const e_oil = inp.oil * EF.oil;
+            const e_lpg = inp.lpg * EF.lpg;
+            const e_dies = inp.diesel * EF.diesel;
+            const e_urea = inp.urea * EF.urea;
+            const e_lime = inp.lime * EF.lime;
+            const n2o_dir = inp.n * EF.ef1 * M;
+            const n2o_vol = inp.n * EF.frac_vol * EF.ef_vol * M;
+            const n2o_leach = inp.n * EF.frac_leach * EF.ef_leach * M;
+            const e_n2o = (n2o_dir + n2o_vol + n2o_leach) * EF.gwp_n2o;
+            return { total: e_elec + e_oil + e_lpg + e_dies + e_urea + e_lime + e_n2o, e_elec, e_oil, e_lpg, e_dies, e_urea, e_lime, e_n2o };
+        }
+
+        function recalc() {
+            const u = readUser();
+            const b = regionForArea(u.areaA);
+
+            // 目安と差分
+            ITEMS.forEach(it => {
+                const bench = b[it.key] || 0;
+                const val = u[it.key] || 0;
+                document.getElementById('bench_' + it.key).textContent = fmt(bench);
+                const diff = val - bench;
+                let cls = diff <= 0 ? 'deltaPos' : 'deltaNeg';
+                // 心理的負担軽減：目安が0に近い場合は中立表示
+                if (bench < 1 && val > 0) { cls = ''; }
+                document.getElementById('diff_' + it.key).innerHTML = `<span class="${cls}">${fmt(diff)}</span>`;
+            });
+
+            // 集計
+            const agr = totals(u);
+            const reg = totals(b);
+
+            document.getElementById('kpi_total').textContent = fmt(agr.total);
+            document.getElementById('kpi_intensity').textContent = (u.yield > 0 ? fmt(agr.total / u.yield) : '—');
+            const deltaPct = (reg.total > 0) ? ((agr.total / reg.total - 1) * 100) : NaN;
+            const deltaHtml = isFinite(deltaPct) ? `<span class="${deltaPct <= 0 ? 'deltaPos' : 'deltaNeg'}">${fmt(deltaPct)}%</span>` : '—';
+            document.getElementById('kpi_delta').innerHTML = deltaHtml;
+            const absRed = (isFinite(deltaPct) ? (reg.total - agr.total) : 0);
+            document.getElementById('kpi_abs_reduction').innerHTML = (isFinite(absRed) ? fmt(absRed) : '—');
+
+            // 内訳
+            const rows = [
+                ['電力', agr.e_elec, reg.e_elec],
+                ['A重油（暖房）', agr.e_oil, reg.e_oil],
+                ['LPG（CO₂施用など）', agr.e_lpg, reg.e_lpg],
+                ['軽油（構内運搬等）', agr.e_dies, reg.e_dies],
+                ['尿素', agr.e_urea, reg.e_urea],
+                ['石灰', agr.e_lime, reg.e_lime],
+                ['N₂O（土壌, 直接+間接）', agr.e_n2o, reg.e_n2o]
+            ];
+            const tb = document.getElementById('tbody_break'); tb.innerHTML = '';
+            rows.forEach(r => {
+                const diff = r[1] - r[2];
+                const cls = diff <= 0 ? 'deltaPos' : 'deltaNeg';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r[0]}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td><td class="${cls}">${fmt(diff)}</td>`;
+                tb.appendChild(tr);
+            });
+        }
+
+        function init() {
+            buildInputTable();
+            document.getElementById('areaA').addEventListener('input', recalc);
+            document.getElementById('areaA').addEventListener('change', recalc);
+            recalc();
+        }
+        init();
+    </script>
+</body>
+
+</html>
